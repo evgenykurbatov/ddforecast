@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 import context
 from context import ddforecast
+from ddforecast.simpletransformer import *
 import utils
 
 # %%
@@ -35,7 +36,7 @@ valid_loader = DataLoader(valid_dataset, batch_size=64)
 # %%
 # Initialise model and loss criterion
 
-model = ddforecast.SimpleTransformer(input_dim=1, forecast_horizon=forecast_horizon)
+model = SimpleTransformer(input_dim=1, forecast_horizon=forecast_horizon)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
