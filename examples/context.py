@@ -1,4 +1,6 @@
 
+from pathlib import Path
+
 try:
     import ddforecast
 except ImportError:
@@ -6,4 +8,7 @@ except ImportError:
     sys.path.append('..')
     import ddforecast
 
-print("Version:", ddforecast.__version__)
+print("ddforecast version:", ddforecast.__version__)
+
+tmp_dir = Path(__file__).parent / 'tmp'
+tmp_dir.mkdir(exist_ok=True)

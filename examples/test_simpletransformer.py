@@ -18,7 +18,7 @@ import utils
 
 dtype = torch.float32
 
-seq = torch.load('data-gp.pt')
+seq = torch.load(context.tmp_dir / 'data-gp.pt')
 print(seq.shape)
 
 train_seq = seq[:20]
@@ -50,7 +50,7 @@ utils.train_model(model, train_loader, valid_loader, optimizer, criterion, devic
 # %%
 
 # Save the model
-torch.save(model.state_dict(), 'test_simpletransformer.model')
+torch.save(model.state_dict(), context.tmp_dir / 'test_simpletransformer.model')
 
 # %%
 

@@ -3,6 +3,8 @@
 import numpy as np
 import torch
 
+import context
+
 
 dtype = torch.float32
 
@@ -26,6 +28,6 @@ def generate_gp(num_samples, seq_len, tau, dtype=torch.float32):
 
 seq = generate_gp(25, 500, 10.0, dtype)
 print(seq.shape)
-torch.save(seq, 'data-gp.pt')
+torch.save(seq, context.tmp_dir / 'data-gp.pt')
 
 # %%
