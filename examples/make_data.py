@@ -26,7 +26,7 @@ def generate_gp(num_samples, seq_len, tau, dtype=torch.float32):
 # %%
 # Gaussian process
 
-seq = generate_gp(25, 500, 10.0, dtype)
+seq = generate_gp(120, 500, 10.0, dtype)
 print(seq.shape)
 torch.save(seq, context.tmp_dir / 'data-gp.pt')
 

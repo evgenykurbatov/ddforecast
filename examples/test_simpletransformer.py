@@ -1,5 +1,8 @@
 # %%
 
+import time
+from tqdm import tqdm
+
 import numpy as np
 
 import torch
@@ -22,10 +25,10 @@ dtype = torch.float32
 seq = torch.load(context.tmp_dir / 'data-gp.pt')
 print(seq.shape)
 
-train_seq = seq[:20]
-valid_seq = seq[20:]
+train_seq = seq[:100]
+valid_seq = seq[100:]
 
-input_len = 100
+input_len = 30
 forecast_horizon = 1
 train_dataset = utils.MultiSeriesDataset(train_seq, input_len, forecast_horizon, dtype)
 valid_dataset = utils.MultiSeriesDataset(valid_seq, input_len, forecast_horizon, dtype)
@@ -36,7 +39,8 @@ valid_loader = DataLoader(valid_dataset, batch_size=64)
 # %%
 # Initialise model and loss criterion
 
-model = SimpleTransformer(input_dim=1, forecast_horizon=forecast_horizon)
+#model = SimpleTransformer(input_dim=1, forecast_horizon=forecast_horizon)
+model = SimpleTransformer(input_dim=1, model_dim=16, num_heads=2, forecast_horizon=forecast_horizon)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 criterion = nn.MSELoss()
@@ -56,8 +60,10 @@ else:
     print("Train model")
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    t0 = time.time()
     utils.train_model(model, train_loader, valid_loader, optimizer, criterion, device, epochs=20)
-    print("Save model")
+    print("Elapsed time:", time.time() - t0)
+    print("\nSave model")
     torch.save(model.state_dict(), fname)
 
 # %%
@@ -67,10 +73,7 @@ def plot_predictions(model, series, input_len, forecast_horizon=1):
     # Evaluate predictions
 
     model.eval()
-    inputs = []
-    targets = []
-    preds = []
-    diffs = []
+    inputs, targets, preds, diffs = [], [], [], []
 
     with torch.no_grad():
         for i in range(len(series) - input_len - forecast_horizon):
@@ -108,11 +111,16 @@ def plot_predictions(model, series, input_len, forecast_horizon=1):
     ax_ = ax[1]
     ax_.hist(np.array(diffs).T)
 
-    plt.show()
-    plt.close()
+    return fig
 
 
-for seq_ in valid_seq:
-    plot_predictions(model, seq_, input_len, forecast_horizon)
+from matplotlib.backends.backend_pdf import PdfPages
+
+# For multipage PDF see https://matplotlib.org/stable/gallery/misc/multipage_pdf.html
+with PdfPages(context.tmp_dir / 'test_simpletransformer.pdf') as pdf:
+    for seq_ in tqdm(valid_seq):
+        fig = plot_predictions(model, seq_, input_len, forecast_horizon)
+        pdf.savefig(fig)
+        plt.close()
 
 # %%
