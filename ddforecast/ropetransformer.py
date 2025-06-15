@@ -22,7 +22,7 @@ import torch.nn as nn
 
 def apply_rotary_pos_emb(x, sin, cos):
     # x: [batch, seq_len, n_heads, head_dim]
-    x1, x2 = x[...,::2], x[...,1::2]
+    x1, x2 = x[...,0::2], x[...,1::2]
     x_rotated = torch.cat([x1*cos - x2*sin, x1*sin + x2*cos], dim=-1)
     return x_rotated
 
@@ -31,11 +31,8 @@ def build_rope_cache(seq_len, dim, device, base=10000):
     position = torch.arange(seq_len, device=device).unsqueeze(1)  # [seq_len, 1]
     dim_idx = torch.arange(0, dim, 2, device=device)  # [dim//2]
     freqs = 1.0 / (base**(dim_idx / dim))
-    angles = position * freqs  # [seq_len, dim//2]
-
-    sin = angles.sin().repeat_interleave(2, dim=-1)  # [seq_len, dim]
-    cos = angles.cos().repeat_interleave(2, dim=-1)  # [seq_len, dim]
-    return sin, cos
+    phase = position * freqs  # [seq_len, dim//2]
+    return phase.sin(), phase.cos()
 
 
 class RoPEMultiheadAttention(nn.Module):
@@ -54,7 +51,7 @@ class RoPEMultiheadAttention(nn.Module):
         qkv = self.qkv(x).reshape(B, T, 3, self.num_heads, self.head_dim)
         q, k, v = qkv[:,:,0], qkv[:,:,1], qkv[:,:,2]  # [B, T, H, D_head]
 
-        sin, cos = build_rope_cache(T, self.head_dim, x.device, rope_base=10000)
+        sin, cos = build_rope_cache(T, self.head_dim, x.device, base=10000)
         sin, cos = sin.unsqueeze(0).unsqueeze(2), cos.unsqueeze(0).unsqueeze(2)  # [1, T, 1, D]
 
         q = apply_rotary_pos_emb(q, sin, cos)
